@@ -1,0 +1,108 @@
+# File that contain the class that communicates with the hecaton's server
+import requests
+
+class HecatonServer:
+    
+    str_to_method = {
+        "GET" : requests.get,
+        "POST": requests.post,
+        "PUT" : requests.put,
+        "DELETE" : requests.delete
+    }
+    
+    def call_endpoint(
+        ip : str,
+        secret : str,
+        method : str,
+        endpoint : str,
+        payload : dict | None = None
+    ):
+        ip = ip if ip.startswith('http') else f'http://{ip}'
+        result = HecatonServer.str_to_method[method](f"{ip}{endpoint}",
+            headers = { "Authorization" : secret },
+            **({"json" : payload} if method != "GET" else {})
+        )
+        return result
+    
+    def list_jobs(
+        ip : str,
+        secret : str
+    ):
+        results = HecatonServer.call_endpoint(
+            ip=ip,
+            secret=secret,
+            method="GET",
+            endpoint="/jobs"
+        )
+        if results.ok:
+            return results.json()
+        return results.json()["detail"]
+    
+    def list_images(
+        ip : str,
+        secret : str
+    ):
+        results = HecatonServer.call_endpoint(
+            ip=ip,
+            secret=secret,
+            method="GET",
+            endpoint="/images"
+        )
+        if results.ok:
+            return results.json()
+        return results.json()["detail"]
+
+    def new_job(
+        ip : str,
+        secret : str,
+        file_path : str,
+        image : str
+    ):
+        file_content = open(file_path, "r").read()
+        
+        results = HecatonServer.call_endpoint(
+            ip=ip,
+            secret=secret,
+            method="POST",
+            endpoint="/jobs/new",
+            payload={
+                "payload" : file_content,
+                "image" : image
+            }
+        )
+        if results.ok:
+            return results.json()["job_id"]
+        return results.json()["detail"]
+    
+    def new_image(
+        ip : str,
+        secret : str,
+        image : str
+    ):
+        results = HecatonServer.call_endpoint(
+            ip=ip,
+            secret=secret,
+            method="POST",
+            endpoint="/images/new",
+            payload={
+                "image_name" : image,
+            }
+        )
+        if results.ok:
+            return results.json()["message"]
+        return results.json()["detail"]
+
+    def get_job(
+        ip : str,
+        secret : str,
+        jid : str
+    ):
+        results = HecatonServer.call_endpoint(
+            ip=ip,
+            secret=secret,
+            method="GET",
+            endpoint=f"/jobs/{jid}"
+        )
+        if results.ok:
+            return results.json()
+        return results.json()["detail"]
