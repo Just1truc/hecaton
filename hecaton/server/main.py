@@ -1,11 +1,12 @@
 import os
 import shutil
+import uvicorn
 
 from typing import Union, Callable, Tuple
 from fastapi import FastAPI
-from server.argparser import parser
-from server.worker import SQLiteQueue
-from server.dto import *
+from hecaton.server.argparser import parser
+from hecaton.server.worker import SQLiteQueue
+from hecaton.server.dto import *
 from dotenv import load_dotenv
 
 from pathlib import Path
@@ -31,12 +32,19 @@ def data_dir() -> Path:
     d.mkdir(parents=True, exist_ok=True)
     return d
 
-if __name__ != "__main__":
-    q = SQLiteQueue(data_dir() / "jobs.db")
+if not os.path.exists(data_dir() / ".env"):
+    file = input("No env found, please enter env file path: ")
+    # save argument as secret in .env
+    if os.path.exists(file) and os.path.isfile(file):
+        shutil.copyfile(file, data_dir() / ".env")
 
-    load_dotenv(data_dir() / ".env")
+    print(f"Properly copied .env in {data_dir() / '.env'}")
 
-    API_SECRET = os.getenv("SECRET")
+q = SQLiteQueue(data_dir() / "jobs.db")
+
+load_dotenv(data_dir() / ".env")
+
+API_SECRET = os.getenv("SECRET")
 
 api_key_header = APIKeyHeader(name="Authorization", auto_error=False)
 
@@ -75,7 +83,7 @@ def get_job(jid):
     res = provider_call(q, "get_job", (jid,))
     return res
 
-@app.post("/jobs/update/{jid}", dependencies=[Depends(get_api_key)])
+@app.post("/jobs/update", dependencies=[Depends(get_api_key)])
 def get_job(update_dto : JobUpdateDTO):
     return provider_call(q, "update_job", (update_dto.job_id, update_dto.new_status, update_dto.new_payload))
 
@@ -87,6 +95,11 @@ def all_images():
 def new_image(image_dto : NewImageDTO):
     provider_call(q, "new_image", (image_dto.image_name,))
     return { "message" : "Successfully added image" }
+
+@app.post("/images/update", dependencies=[Depends(get_api_key)])
+def update_image(update_image_dto : UpdateImageDTO):
+    provider_call(q, "update_image", (update_image_dto,))
+    return { "message": f"Successfully updated image {update_image_dto.image_name}" }
 
 @app.get("/images/{imid}")
 def get_image(imid : int):
@@ -105,24 +118,12 @@ def update_worker(worker_update_dto : WorkerStatusUpdateDTO):
     provider_call(q, "update_worker_status", (worker_update_dto.worker_id, worker_update_dto.status))
     return { "message" : "Successfully updated worker status" }
 
-if __name__ == "__main__":
-    
-    # save argument as secret in .env
-    file = sys.argv[1]
-    if os.path.exists(file) and os.path.isfile(file):
-        shutil.copyfile(file, data_dir() / ".env")
-        
-    print(f"Properly copied .env in {data_dir() / '.env'}")
+# TODO
+# endpoint to get a worker's current job
+@app.get("/worker/{wid}", dependencies=[Depends(get_api_key)])
+def get_worker_job(worker_id : int):
+    job : AssignedJobDTO | None = provider_call(q, "get_worker_job", (worker_id,))
+    return { "jobs" : [job.model_dump()] if job else [] }
 
+uvicorn.run(app)
     
-# print("test")
-# if __name__ == "__main__":
-#     print("test2")
-
-#     args = parser.parse_args()
-#     load_dotenv(args.env)
-    
-#     if not(os.getenv("SECRET")):
-#         print("API secret not set properly in dotenv file. format should be AI_SECRET={secret}")
-        
-#     q = SQLiteQueue("jobs.db")

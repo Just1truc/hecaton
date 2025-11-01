@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hecaton"
+version = "0.1.0"
+description = "Hecaton distributed compute framework"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+readme = "README.md"
+requires-python = ">=3.9"
+
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "platformdirs",
+    "typer",
+    "prompt_toolkit",
+    "click",
+    "docker",
+]
+
+[project.scripts]
+hecaton-cli = "hecaton.client.cli:main"
+hecaton-gpu = "hecaton.gpu.main:main"
+hecaton-server = "hecaton.server.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["hecaton*"]
+
+[tool.setuptools.package-data]
+hecaton = ["*.txt"]

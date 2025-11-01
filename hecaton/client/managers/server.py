@@ -1,7 +1,8 @@
 import typer
 import click
+import importlib
 from typing import Optional, List
-from client.managers.db import with_locked_db, ServerInfo
+from hecaton.client.managers.db import with_locked_db, ServerInfo
 
 server_app = typer.Typer()
 
@@ -29,6 +30,8 @@ class ServerManager:
                     found = True
             if not found:
                 db.servers.append(ServerInfo(ip=ip, name=name, secret=secret))
+            
+    
             
     def server_name_exists(
         self,
@@ -71,7 +74,8 @@ def register(
     
 @server_app.command("help")
 def server_help():
-    typer.echo('\n'.join(open("help.txt").read().split("\n")[12:19]))
+    with importlib.resources.open_text("hecaton", "help.txt") as f:
+        typer.echo('\n'.join(f.read().split("\n")[13:21]))
     
 def complete_server_name(ctx : typer.Context, param: click.Parameter, incomplete : str) -> List[str]:
     
@@ -104,7 +108,7 @@ def prompt_optional(label: str, *, hide: bool = False):
     return _cb
         
 @server_app.command("update")
-def register(
+def server_update(
     ctx : typer.Context,
     name : str = typer.Argument(shell_complete=complete_server_name),
     ip: Optional[str] = typer.Option(
@@ -120,7 +124,6 @@ def register(
         show_default=False,
     )
 ):
-    
     mgr : ServerManager = ctx.obj["server_mgr"]
     mgr.register_server(ip, name, secret)
         

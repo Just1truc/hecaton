@@ -6,6 +6,7 @@ image
 |--- show [image]               - Show image information
 |--- list                       - List the current images  
 |--- new [image]                - Add new image to the server
+|--- update [image]             - Update image info
 job
 |--- show [job_id]              - Show the info associated to a specific job
 |--- list                       - List the currently running jobs
@@ -14,6 +15,7 @@ server
 |--- list                       - List known servers
 |--- help                       - display help
 |--- show [server_name]         - Show server info
+|--- update [server]            - Update server info
 |--- connect [server_name]      - Connect to known server
 |--- new                        - Add new server to known hosts
 |--- disconnect                 - Disconnect from the current server

@@ -1,13 +1,13 @@
 import shlex, typer, os
 from prompt_toolkit import PromptSession
 from prompt_toolkit.formatted_text import ANSI
-from client.managers import ServerManager, ImageManager, JobManager, apps
+from hecaton.client.managers import ServerManager, ImageManager, JobManager, apps
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.completion import Completer, Completion
 from typer.main import get_command
 from typing import Iterable, List, Tuple, Optional
 import click
-# Main CLI
+import importlib
 
 app = typer.Typer()
 
@@ -18,9 +18,6 @@ def _indented_echo(message="", indent=4, **kwargs):
     msg = "\n".join(prefix + line for line in str(message).splitlines())
     _original_echo(msg, **kwargs)
 
-# -----------------
-# Load sub apps
-# -----------------
 
 shared_context = {
     "server_mgr"    : ServerManager(),
@@ -42,7 +39,7 @@ def _resolve_chain(root_cmd, root_ctx, args):
             break
         ctx = sub_cmd.make_context(
             info_name=name,
-            args=rest2,           # pass remaining tokens
+            args=rest2,
             parent=ctx,
             resilient_parsing=True,
             obj=ctx.obj,
@@ -58,15 +55,15 @@ def _match_option(token: str, options: List[click.Option]) -> Optional[click.Opt
     return None
 
 def _consume_tokens_for_option(opt: click.Option, tokens: List[str], i: int) -> int:
-    """Advance index past an option and its value tokens."""
+    
     t = tokens[i]
-    # --opt=value form consumes in-place
+    
     if "=" in t and t.startswith("-"):
         return i + 1
-    # flags (nargs == 0)
+    
     if opt.nargs == 0:
         return i + 1
-    # otherwise consume this option + its value tokens
+    
     return min(i + 1 + opt.nargs, len(tokens))
 
 def determine_active_param(
@@ -87,7 +84,6 @@ def determine_active_param(
     if completing_option_name:
         return ("option_name", None, -1)
 
-    # Walk tokens and consume options/values to count positionals precisely
     i = 0
     pos_i = 0
     while i < len(args_after_leaf):
@@ -122,9 +118,6 @@ def determine_active_param(
             # extra tokens; move on
             i += 1
 
-    # At this point, the cursor is on:
-    # - an option value (if the last token was an option name expecting a value)
-    # - OR the next positional (index = pos_i)
     if args_after_leaf:
         last = args_after_leaf[-1]
         last_opt = _match_option(last, opt_params)
@@ -206,10 +199,6 @@ app.add_typer(apps.job_app, name="job")
 app.add_typer(apps.image_app, name="image")
 app.add_typer(apps.server_app, name="server")
 
-# -----------------
-# Top level commands :P
-# -----------------
-
 @app.command("ls")
 def list_files():
     print(*["    " + f for f in os.listdir(".")], sep="\n")
@@ -220,14 +209,16 @@ def change_dir(dir):
 
 @app.command("help")
 def greet():
-    typer.echo(open("help.txt").read())
+    with importlib.resources.open_text("hecaton", "../help.txt") as f:
+        typer.echo(f.read())
 
 @app.command()
 def unknown():
     typer.echo(f"Unknown command")
 
 def run_shell():
-    logo = open("logo_hecaton.txt", encoding="utf-8").read()
+    logo = importlib.resources.open_text("hecaton", "../logo_hecaton.txt").read()
+    # logo = open("logo_hecaton.txt", encoding="utf-8").read()
     typer.echo(logo)
 
     root_click_cmd = get_command(app)
@@ -259,5 +250,8 @@ def run_shell():
         except Exception as e:
             typer.echo(f"error: {e}")
 
-if __name__ == "__main__":
+def main():
     run_shell()
+
+if __name__ == "__main__":
+    main()

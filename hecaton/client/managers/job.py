@@ -1,9 +1,9 @@
 import typer, os
 import click
 from typing import Optional, List
-from client.managers.api import HecatonServer
-from client.managers.server import ServerManager, ServerInfo
-from client.managers.image import complete_image_name
+from hecaton.client.managers.api import HecatonServer
+from hecaton.client.managers.server import ServerManager, ServerInfo
+from hecaton.client.managers.image import complete_image_name
 from pathlib import Path
 
 job_app = typer.Typer()

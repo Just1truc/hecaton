@@ -1,5 +1,6 @@
 # File that contain the class that communicates with the hecaton's server
 import requests
+from typing import Optional, List, Tuple
 
 class HecatonServer:
     
@@ -74,6 +75,28 @@ class HecatonServer:
             return results.json()["job_id"]
         return results.json()["detail"]
     
+    def update_image(
+        ip,
+        secret,
+        image : str,
+        env : List[Tuple[str, str]] | None = None,
+        description : Optional[str] = None
+    ):
+        results = HecatonServer.call_endpoint(
+            ip=ip,
+            secret=secret,
+            method="POST",
+            endpoint="/images/update",
+            payload={
+                "image_name" : image,
+                **({"env" : [{"key" : var[0], "value" : var[1]} for var in env]} if env else {}),
+                **({"description" : description} if description else {}) 
+            }
+        )
+        if results.ok:
+            return results.json()["message"]
+        return results.json()["detail"]
+            
     def new_image(
         ip : str,
         secret : str,

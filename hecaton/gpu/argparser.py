@@ -5,5 +5,5 @@ parser = argparse.ArgumentParser(
     description="A client to start an instance of a hecaton GPU cluster"
 )
 parser.add_argument(
-    "ip", type=str, default="0.0.0.0:8181"
+    "ip", type=str
 )

@@ -1,6 +1,8 @@
 import json, sqlite3, uuid, threading
 import requests
 
+from hecaton.server.dto import AssignedJobDTO, UpdateImageDTO
+
 # In seconds
 TIMEOUT_TIME = 30
 
@@ -41,19 +43,20 @@ class SQLiteQueue:
         self.executescript("""
         CREATE TABLE IF NOT EXISTS workers(
           id TEXT PRIMARY KEY,
-          status TEXT NOT NULL CHECK(status IN ('IDLE', 'REQUESTED', 'DEAD', 'RUNNING', 'INITIALIZING')),
+          status TEXT NOT NULL CHECK(status IN ('IDLE', 'REQUESTED', 'DEAD', 'RUNNING', 'INITIALIZING', 'SYNCHRONIZING')),
           updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
         );
         CREATE TABLE IF NOT EXISTS images(
           id INTEGER PRIMARY KEY,
-          image_name TEXT NOT NULL,
-          description TEXT
+          image_name TEXT NOT NULL UNIQUE,
+          description TEXT,
+          env TEXT
         );
         CREATE TABLE IF NOT EXISTS jobs(
           id TEXT PRIMARY KEY,
           image_id INTEGER,
           assigned_worker INTEGER,
-          status TEXT NOT NULL CHECK(status IN ('IN_QUEUE','IN_PROGRESS','FINISHED','FAILED','CANCELLED')),
+          status TEXT NOT NULL CHECK(status IN ('IN_QUEUE','IN_PROGRESS','FINISHED','FAILED','CANCELLED', 'ASSIGNED')),
           payload TEXT NOT NULL,
           attempts INTEGER NOT NULL DEFAULT 0,
           last_error TEXT,
@@ -111,7 +114,24 @@ class SQLiteQueue:
             "INSERT INTO images(id,image_name, description) VALUES(?, ?, ?)",
             (max_id, image, repo_info['description']),
         )
-    
+        
+    def update_image(
+        self,
+        image_update : UpdateImageDTO
+    ):
+        query = []
+        args = []
+        if image_update.description:
+            query.append("description=?")
+            args.append(image_update.description)
+        if image_update.env:
+            query.append("env=?")
+            args.append(json.dumps([var.model_dump() for var in image_update.env]))
+        if not len(query):
+            return
+        query = ",".join(query)
+        self.execute(f"UPDATE images SET {query} WHERE image_name=?", args)
+
     # Assign idle workers to jobs that don't have an assigned worker
     def assign_jobs(self) -> str:
         
@@ -125,23 +145,30 @@ class SQLiteQueue:
             # Update the worker to REQUESTED
             self.update_worker_status(worker.id, 'REQUESTED')
             
-    def get_worker_job(self, worker_id : int):
-        return self.execute("SELECT * FROM jobs WHERE assigned_worker=?", (worker_id,)).fetchone()[0]
+    def get_worker_job(self, worker_id : int) -> AssignedJobDTO | None:
+        row = self.execute("SELECT (jobs.id, images.image_name, image.env, jobs.status, jobs.payload) FROM jobs INNER JOIN images on jobs.image_id = images.id WHERE assigned_worker=?", (worker_id,)).fetchone()
+        if not row or not len(row):
+            return None
+        jid, image_name, image_env, status, payload = row
+        return AssignedJobDTO(jid, image_name, (image_env and json.loads(image_env)), status, payload)
     
     # Update workers status
     def update_worker_status(self, worker_id : int, worker_status : str):
-        self.execute("UPDATE workers SET status='?', updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?", (worker_status, worker_id))
+        self.execute("UPDATE workers SET status=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?", (worker_status, worker_id))
     
     # Connect new worker
     def connect_worker(self, worker_id : int | None):
         
         # connecting existing worker
+        # print("given?", worker_id)
         if (worker_id):
+            # print("wut")
             self.update_worker_status(worker_id=worker_id, worker_status='INITIALIZING')
             return worker_id
         else:
             # Connecting new worker
-            new_id = self.execute("SELECT MAX(id) FROM workers").fetchone()[0]
+            new_id = (self.execute("SELECT MAX(id) FROM workers").fetchone()[0] or 0) + 1
+            # print("new_id?", new_id)
             self.execute(
                 "INSERT INTO workers(id,status) VALUES(?, 'INITIALIZING')",
                 (new_id,),
