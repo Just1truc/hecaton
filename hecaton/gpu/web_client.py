@@ -9,14 +9,33 @@ class GPUWebClient:
         worker_config : WorkerConfig
     ):
         self.ip = ip
-        self.secret     = worker_config.secret
         self.worker_id  = worker_config.worker_id
+        
+        # Authentication
+        self.token = worker_config.token
+        if not self.token and worker_config.username and worker_config.password:
+            self.login(worker_config)
+            
         self.headers    = {
-            "Authorization" : self.secret
+            "Authorization" : f"Bearer {self.token}" if self.token else ""
         }
 
         self.__connect_server()
     
+    def login(self, config: WorkerConfig):
+        ip = self.ip if self.ip.startswith('http') else f'http://{self.ip}'
+        try:
+            res = requests.post(f"{ip}/token", data={"username": config.username, "password": config.password})
+            if res.ok:
+                data = res.json()
+                self.token = data["access_token"]
+                config.token = data["access_token"]
+                save_worker_config(self.ip, config)
+            else:
+                print(f"Failed to login worker: {res.text}")
+        except Exception as e:
+            print(f"Login error: {e}")
+
     def __connect_server(self):
         
         result = requests.post(f'{self.ip}/workers/connect',
@@ -26,11 +45,14 @@ class GPUWebClient:
             headers=self.headers
         )
         if not(result.ok):
-            raise RuntimeError(f"Failed to connect to server {self.ip}. Cause: {result.json()['message']}")
+            raise RuntimeError(f"Failed to connect to server {self.ip}. Cause: {result.json()['detail']}")
         
         self.worker_id = str(result.json()["worker_id"])
         
-        save_worker_config(self.ip, WorkerConfig(secret=self.secret, worker_id=self.worker_id))
+        # Update config with worker_id
+        config = load_worker_config(self.ip)
+        config.worker_id = self.worker_id
+        save_worker_config(self.ip, config)
         
     def get_online_images(self):
         

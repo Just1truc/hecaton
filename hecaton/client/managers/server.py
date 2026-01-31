@@ -3,6 +3,7 @@ import click
 import importlib
 from typing import Optional, List
 from hecaton.client.managers.db import with_locked_db, ServerInfo
+from hecaton.client.managers.api import HecatonServer
 
 server_app = typer.Typer()
 
@@ -27,6 +28,9 @@ class ServerManager:
                 if server.name == name:
                     server.ip = ip or server.ip
                     server.secret = secret or server.secret
+                    # Clear token if secret is updated manually?
+                    if secret:
+                        server.token = None 
                     found = True
             if not found:
                 db.servers.append(ServerInfo(ip=ip, name=name, secret=secret))
@@ -71,6 +75,37 @@ def register(
 ):
     mgr : ServerManager = ctx.obj["server_mgr"]
     mgr.register_server(ip, name, secret)
+
+@server_app.command("login")
+def login(
+    ctx : typer.Context,
+    server_name : str = typer.Argument(..., help="Server name to login to"),
+    username : str = typer.Option(..., prompt="Username", help="Username"),
+    password : str = typer.Option(..., prompt="Password", hide_input=True, help="Password")
+):
+    mgr : ServerManager = ctx.obj["server_mgr"]
+    
+    # Get server info
+    server = mgr.server_info(server_name)
+    if not server:
+        typer.echo(f"error: Unknown server '{server_name}'")
+        return
+
+    try:
+        data = HecatonServer.login(server.ip, username, password)
+        if data and "access_token" in data:
+            with with_locked_db(mutate=True) as db:
+                for s in db.servers:
+                    if s.name == server_name:
+                        s.token = data["access_token"]
+                        s.username = username
+                        # s.secret = None # Should we clear legacy secret?
+            typer.echo(f"Successfully logged in to {server_name}")
+        else:
+            typer.echo("Login failed: Invalid credentials or server error")
+    except Exception as e:
+        typer.echo(f"Login error: {e}")
+
     
 @server_app.command("help")
 def server_help():
@@ -141,6 +176,8 @@ def server_info(
     server = mgr.server_info(server_name=server_name)
     typer.echo(f"Name: \t{server.name}")
     typer.echo(f"Ip: \t{server.ip}")
+    typer.echo(f"User: \t{server.username or 'N/A'}")
+    typer.echo(f"Auth: \t{'JWT' if server.token else ('Secret' if server.secret else 'None')}")
     
 @server_app.command("disconnect")
 def server_disconnect(

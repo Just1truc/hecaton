@@ -46,6 +46,13 @@ class SQLiteQueue:
           status TEXT NOT NULL CHECK(status IN ('IDLE', 'REQUESTED', 'DEAD', 'RUNNING', 'INITIALIZING', 'SYNCHRONIZING')),
           updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
         );
+        CREATE TABLE IF NOT EXISTS users(
+          id TEXT PRIMARY KEY,
+          username TEXT NOT NULL UNIQUE,
+          hashed_password TEXT NOT NULL,
+          role TEXT NOT NULL DEFAULT 'user',
+          created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+        );
         CREATE TABLE IF NOT EXISTS images(
           id INTEGER PRIMARY KEY,
           image_name TEXT NOT NULL UNIQUE,
@@ -219,3 +226,18 @@ class SQLiteQueue:
         
         # Make client CLI
         # Test everything
+
+    # User Management
+    def create_user(self, username, hashed_password, role='user'):
+        uid = str(uuid.uuid4())
+        try:
+            self.execute(
+                "INSERT INTO users(id, username, hashed_password, role) VALUES(?, ?, ?, ?)",
+                (uid, username, hashed_password, role)
+            )
+            return uid
+        except sqlite3.IntegrityError:
+            return None # Username already exists
+
+    def get_user(self, username):
+        return self.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()

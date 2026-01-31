@@ -18,7 +18,10 @@ def data_dir() -> Path:
 
 class WorkerConfig(BaseModel):
     
-    secret : str
+    secret : str | None = None # Legacy or Token
+    token : str | None = None
+    username : str | None = None
+    password : str | None = None
     worker_id : str
 
 def load_worker_config(server_ip : str) -> WorkerConfig:
@@ -31,7 +34,12 @@ def load_worker_config(server_ip : str) -> WorkerConfig:
     if server_ip in register:
         return WorkerConfig.model_validate(register[server_ip])
     
-    new_entry = WorkerConfig(secret=getpass.getpass("SERVER SECRET: "), worker_id="")
+    # New entry
+    print(f"To configure worker for {server_ip}, please provide credentials:")
+    username = input("Username: ")
+    password = getpass.getpass("Password: ")
+    
+    new_entry = WorkerConfig(username=username, password=password, worker_id="")
     register[server_ip] = new_entry.model_dump()
     open(gpu_data_path, "w").write(json.dumps(register))
     

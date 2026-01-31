@@ -1,7 +1,15 @@
 fastapi
 uvicorn
-platformdirs
+requests
+pydantic
 typer
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt==4.0.1
+fastapi-utilities
+platformdirs
+python-dotenv
+filelock
 prompt_toolkit
 click
 docker

@@ -1,0 +1,23 @@
+Hecaton's available commands:
+
+cd [dir]                        - Move to new dir
+ls                              - Show current directory's files
+image
+|--- show [image]               - Show image information
+|--- list                       - List the current images  
+|--- new [image]                - Add new image to the server
+|--- update [image]             - Update image info
+job
+|--- show [job_id]              - Show the info associated to a specific job
+|--- list                       - List the currently running jobs
+|--- new [image] [payload_file] - Start a new job on the server
+server
+|--- list                       - List known servers
+|--- help                       - display help
+|--- show [server_name]         - Show server info
+|--- update [server]            - Update server info
+|--- connect [server_name]      - Connect to known server
+|--- new                        - Add new server to known hosts
+|--- disconnect                 - Disconnect from the current server
+quit                            - Quit Hecaton's CLI
+help                            - Show this output

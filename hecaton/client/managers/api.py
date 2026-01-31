@@ -20,10 +20,20 @@ class HecatonServer:
     ):
         ip = ip if ip.startswith('http') else f'http://{ip}'
         result = HecatonServer.str_to_method[method](f"{ip}{endpoint}",
-            headers = { "Authorization" : secret },
+        result = HecatonServer.str_to_method[method](f"{ip}{endpoint}",
+            headers = { "Authorization" : f"Bearer {secret}" },
             **({"json" : payload} if method != "GET" else {})
         )
+        )
         return result
+    
+    def login(ip: str, username: str, password: str):
+        ip = ip if ip.startswith('http') else f'http://{ip}'
+        result = requests.post(f"{ip}/token", data={"username": username, "password": password})
+        if result.ok:
+            return result.json()
+        return None
+
     
     def list_jobs(
         ip : str,

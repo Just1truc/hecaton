@@ -15,7 +15,9 @@ SCHEMA_VERSION = 1
 class ServerInfo(BaseModel):
     ip: str
     name: str
-    secret: str
+    secret: str | None = None # key for legacy auth
+    token: str | None = None  # JWT token
+    username: str | None = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class Database(BaseModel):

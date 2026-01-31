@@ -209,7 +209,7 @@ def change_dir(dir):
 
 @app.command("help")
 def greet():
-    with importlib.resources.open_text("hecaton", "../help.txt") as f:
+    with importlib.resources.open_text("hecaton", "help.txt") as f:
         typer.echo(f.read())
 
 @app.command()
@@ -217,7 +217,7 @@ def unknown():
     typer.echo(f"Unknown command")
 
 def run_shell():
-    logo = importlib.resources.open_text("hecaton", "../logo_hecaton.txt").read()
+    logo = importlib.resources.open_text("hecaton", "logo_hecaton.txt").read()
     # logo = open("logo_hecaton.txt", encoding="utf-8").read()
     typer.echo(logo)
 
