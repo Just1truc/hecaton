@@ -13,3 +13,5 @@ filelock
 prompt_toolkit
 click
 docker
+pytest
+httpx

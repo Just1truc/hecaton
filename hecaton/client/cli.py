@@ -32,7 +32,6 @@ def _split_args(text: str):
 
 def _resolve_chain(root_cmd, root_ctx, args):
     cmd, ctx, rest = root_cmd, root_ctx, list(args)
-    # print("start rest", rest)
     while isinstance(cmd, click.MultiCommand) and rest:
         name, sub_cmd, rest2 = cmd.resolve_command(ctx, rest)
         if not sub_cmd:
@@ -45,7 +44,6 @@ def _resolve_chain(root_cmd, root_ctx, args):
             obj=ctx.obj,
         )
         cmd, rest = sub_cmd, rest[1:]
-    # print("rest end", rest)
     return cmd, ctx, rest
 
 def _match_option(token: str, options: List[click.Option]) -> Optional[click.Option]:
@@ -138,14 +136,13 @@ class TyperCompleter(Completer):
         text = document.text_before_cursor
         args = _split_args(text)
         incomplete = "" if text.endswith((" ", "\t")) else (args.pop() if args else "")
-        # print(args)
+
 
         root_ctx = self.make_root_ctx()
         leaf_cmd, leaf_ctx, rest = _resolve_chain(self.root_cmd, root_ctx, args)
 
         args_after_leaf = rest
         # IMPORTANT: call on the LEAF command with (ctx, incomplete)
-        # print("Command name", leaf_cmd.name)
         items = list(leaf_cmd.shell_complete(leaf_ctx, incomplete))
 
         if not items:
@@ -176,14 +173,6 @@ class TyperCompleter(Completer):
                     items = list(param.shell_complete(leaf_ctx, incomplete))
                 elif getattr(param.type, "shell_complete", None):
                     items = list(param.type.shell_complete(leaf_ctx, param, incomplete))
-
-            # print("DBG", {
-            # "args_after_leaf": args_after_leaf,
-            # "kind": kind,
-            # "param": getattr(param, "name", None),
-            # "pos_index": pos_index,
-            # "incomplete": incomplete,
-            # })
 
         # yield items
         start = -len(incomplete)

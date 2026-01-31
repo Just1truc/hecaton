@@ -82,7 +82,8 @@ class SQLiteQueue:
         if not row:
             raise Exception(f"No image found with the name: {image}")
         
-        id_, image_name, desc = row
+        # row is (id, image_name, description, env)
+        id_ = row[0]
         
         jid = str(uuid.uuid4())
         self.execute(
@@ -117,9 +118,12 @@ class SQLiteQueue:
         repo_info = check_docker_image(image)
         
         max_id = self.execute("SELECT MAX(id) FROM images").fetchone()[0]
+        # max_id can be None if table empty
+        new_id = (max_id or 0) + 1
+        
         self.execute(
             "INSERT INTO images(id,image_name, description) VALUES(?, ?, ?)",
-            (max_id, image, repo_info['description']),
+            (new_id, image, repo_info['description']),
         )
         
     def update_image(
@@ -166,16 +170,13 @@ class SQLiteQueue:
     # Connect new worker
     def connect_worker(self, worker_id : int | None):
         # connecting existing worker
-        # print("given?", worker_id)
         if (worker_id):
-            # print("wut")
             self.update_worker_status(worker_id=worker_id, worker_status='INITIALIZING')
             return worker_id
         else:
             # Connecting new worker
-            new_id = (int(self.execute("SELECT MAX(id) FROM workers").fetchone()[0]) or 0) + 1
-            # print("new_id?", new_id)
-            # print("new")
+            max_id = self.execute("SELECT MAX(id) FROM workers").fetchone()[0]
+            new_id = (int(max_id) if max_id is not None else 0) + 1
             self.execute(
                 "INSERT INTO workers(id,status) VALUES(?, 'INITIALIZING')",
                 (new_id,),
@@ -240,5 +241,4 @@ class SQLiteQueue:
             return None # Username already exists
 
     def get_user(self, username):
-        print(username)
         return self.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
