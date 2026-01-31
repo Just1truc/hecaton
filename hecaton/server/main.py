@@ -188,7 +188,7 @@ def get_worker_job(worker_id : int):
     job : AssignedJobDTO | None = provider_call(q, "get_worker_job", (worker_id,))
     return { "jobs" : [job.model_dump()] if job else [] }
 
-if __name__ == "__main__":
+def main():
     args = parser.parse_args()
     uvicorn.run(
         "hecaton.server.main:app", 
@@ -199,3 +199,5 @@ if __name__ == "__main__":
         ssl_certfile=args.ssl_certfile
     )
     
+if __name__ == "__main__":
+    main()
