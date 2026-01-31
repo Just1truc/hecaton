@@ -13,3 +13,9 @@ parser.add_argument(
 parser.add_argument(
     "--port", type=str, default="8181"
 )
+parser.add_argument(
+    "--ssl-keyfile", type=str
+)
+parser.add_argument(
+    "--ssl-certfile", type=str
+)
