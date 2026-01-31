@@ -60,6 +60,12 @@ class ServerManager:
         else:
             return self.server_info(self.selected_server)
         
+def complete_server_name(ctx : typer.Context, param: click.Parameter, incomplete : str) -> List[str]:
+    
+    mgr : ServerManager = ctx.obj["server_mgr"]
+    servers = mgr.list_servers()
+    return [ s for s in servers if s.startswith(incomplete) ]
+    
 @server_app.command("list")
 def server_list(ctx : typer.Context):
     mgr : ServerManager = ctx.obj["server_mgr"]
@@ -79,7 +85,7 @@ def register(
 @server_app.command("login")
 def login(
     ctx : typer.Context,
-    server_name : str = typer.Argument(..., help="Server name to login to"),
+    server_name : str = typer.Argument(shell_complete=complete_server_name),
     username : str = typer.Option(..., prompt="    Username", help="Username"),
     password : str = typer.Option(..., prompt="    Password", hide_input=True, help="Password")
 ):
@@ -98,6 +104,7 @@ def login(
                 for s in db.servers:
                     if s.name == server_name:
                         s.token = data["access_token"]
+                        s.secret = s.token
                         s.username = username
                         # s.secret = None # Should we clear legacy secret?
             typer.echo(f"Successfully logged in to {server_name}")
@@ -111,12 +118,6 @@ def login(
 def server_help():
     with importlib.resources.open_text("hecaton", "help.txt") as f:
         typer.echo('\n'.join(f.read().split("\n")[13:21]))
-    
-def complete_server_name(ctx : typer.Context, param: click.Parameter, incomplete : str) -> List[str]:
-    
-    mgr : ServerManager = ctx.obj["server_mgr"]
-    servers = mgr.list_servers()
-    return [ s for s in servers if s.startswith(incomplete) ]
     
 @server_app.command("connect")
 def server_connect(

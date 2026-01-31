@@ -57,6 +57,15 @@ def test_protected_route(token):
     assert res.ok, f"Protected route failed: {res.text}"
     print("Protected route successful!")
 
+def test_list_workers(token):
+    print("Testing List Workers (GET /workers)...")
+    headers = {"Authorization": f"Bearer {token}"}
+    res = requests.get(f"{BASE_URL}/workers", headers=headers)
+    assert res.ok, f"List workers failed: {res.text}"
+    print("List workers successful!")
+    # We might expect empty list or list of workers depending on state, but 200 OK is key.
+    print(f"Workers: {res.json()}")
+
 def test_unauthorized():
     print("Testing Unauthorized Access...")
     res = requests.get(f"{BASE_URL}/jobs")
@@ -66,6 +75,7 @@ def test_unauthorized():
 try:
     token = test_login()
     test_protected_route(token)
+    test_list_workers(token)
     test_unauthorized()
     print("\nALL TESTS PASSED!")
 except Exception as e:

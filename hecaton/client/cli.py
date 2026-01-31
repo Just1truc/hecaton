@@ -199,6 +199,7 @@ app.add_typer(apps.job_app, name="job")
 app.add_typer(apps.image_app, name="image")
 app.add_typer(apps.server_app, name="server")
 app.add_typer(apps.user_app, name="user")
+app.add_typer(apps.worker_app, name="worker")
 
 @app.command("ls")
 def list_files():

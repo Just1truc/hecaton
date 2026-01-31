@@ -23,7 +23,7 @@ class GPUWebClient:
         self.__connect_server()
     
     def login(self, config: WorkerConfig):
-        ip = self.ip if self.ip.startswith('http') else f'http://{self.ip}'
+        ip = self.ip if self.ip.startswith('http') else f'https://{self.ip}'
         try:
             res = requests.post(f"{ip}/token", data={"username": config.username, "password": config.password})
             if res.ok:
@@ -37,8 +37,8 @@ class GPUWebClient:
             print(f"Login error: {e}")
 
     def __connect_server(self):
-        
-        result = requests.post(f'{self.ip}/workers/connect',
+        ip = self.ip if self.ip.startswith('http') else f'https://{self.ip}'
+        result = requests.post(f'{ip}/workers/connect',
             json={
                 **({"worker_id" : int(self.worker_id)} if len(self.worker_id) else {})
             },
@@ -55,8 +55,8 @@ class GPUWebClient:
         save_worker_config(self.ip, config)
         
     def get_online_images(self):
-        
-        result = requests.get(f'{self.ip}/images', headers=self.headers)
+        ip = self.ip if self.ip.startswith('http') else f'https://{self.ip}'
+        result = requests.get(f'{ip}/images', headers=self.headers)
         
         if not(result.ok):
             raise RuntimeError(F"Failed to fetch images {result.json()['message']}")
@@ -70,8 +70,9 @@ class GPUWebClient:
         
         if not self.worker_id:
             raise RuntimeError("Not connected to a server")
+        ip = self.ip if self.ip.startswith('http') else f'https://{self.ip}'
         
-        result = requests.post(f'{self.ip}/worker/update', headers=self.headers,
+        result = requests.post(f'{ip}/worker/update', headers=self.headers,
             json={
                 "worker_id" : self.worker_id,
                 "status" : status
@@ -85,7 +86,8 @@ class GPUWebClient:
         jid : str,
         status : str
     ):  
-        result = requests.post(f'{self.ip}/jobs/update', headers=self.headers,
+        ip = self.ip if self.ip.startswith('http') else f'https://{self.ip}'
+        result = requests.post(f'{ip}/jobs/update', headers=self.headers,
             json={
                 "job_id" : jid,
                 "new_status" : status
@@ -100,7 +102,8 @@ class GPUWebClient:
         status : str,
         payload : dict
     ):  
-        result = requests.post(f'{self.ip}/jobs/update', headers=self.headers,
+        ip = self.ip if self.ip.startswith('http') else f'https://{self.ip}'
+        result = requests.post(f'{ip}/jobs/update', headers=self.headers,
             json={
                 "job_id" : jid,
                 "new_status" : status,
@@ -115,10 +118,11 @@ class GPUWebClient:
         if not self.worker_id:
             raise RuntimeError("Not connected to a server")
         
-        # TODO
+            # TODO
         # call server to check if worker as a job assigned
         # needs a new endpoint in server/main.py that calls get_worker_job
-        result = requests.get(f'{self.ip}/worker/{self.worker_id}', headers=self.headers)
+        ip = self.ip if self.ip.startswith('http') else f'https://{self.ip}'
+        result = requests.get(f'{ip}/worker/{self.worker_id}', headers=self.headers)
         
         if not(result.ok):
             raise RuntimeError(F"Failed to fetch worker job {result.json()['message']}")

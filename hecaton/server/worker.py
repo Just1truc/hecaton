@@ -165,7 +165,6 @@ class SQLiteQueue:
     
     # Connect new worker
     def connect_worker(self, worker_id : int | None):
-        
         # connecting existing worker
         # print("given?", worker_id)
         if (worker_id):
@@ -174,8 +173,9 @@ class SQLiteQueue:
             return worker_id
         else:
             # Connecting new worker
-            new_id = (self.execute("SELECT MAX(id) FROM workers").fetchone()[0] or 0) + 1
+            new_id = (int(self.execute("SELECT MAX(id) FROM workers").fetchone()[0]) or 0) + 1
             # print("new_id?", new_id)
+            # print("new")
             self.execute(
                 "INSERT INTO workers(id,status) VALUES(?, 'INITIALIZING')",
                 (new_id,),
@@ -240,4 +240,5 @@ class SQLiteQueue:
             return None # Username already exists
 
     def get_user(self, username):
+        print(username)
         return self.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()

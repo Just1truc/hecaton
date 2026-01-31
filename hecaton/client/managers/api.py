@@ -19,12 +19,12 @@ class HecatonServer:
         payload : dict | None = None
     ):
         ip = ip if ip.startswith('https') else f'https://{ip}'
-        result = HecatonServer.str_to_method[method](f"{ip}{endpoint}",
+        # result = HecatonServer.str_to_method[method](f"{ip}{endpoint}",
         result = HecatonServer.str_to_method[method](f"{ip}{endpoint}",
             headers = { "Authorization" : f"Bearer {secret}" },
             **({"json" : payload} if method != "GET" else {})
         )
-        )
+        # )
         return result
     
     def login(ip: str, username: str, password: str):
@@ -59,6 +59,7 @@ class HecatonServer:
             method="GET",
             endpoint="/images"
         )
+        # print(results)
         if results.ok:
             return results.json()
         return results.json()["detail"]
@@ -160,4 +161,18 @@ class HecatonServer:
         )
         if results.ok:
             return results.json()["message"]
+        return results.json()["detail"]
+
+    def list_workers(
+        ip : str,
+        secret : str
+    ):
+        results = HecatonServer.call_endpoint(
+            ip=ip,
+            secret=secret,
+            method="GET",
+            endpoint="/workers"
+        )
+        if results.ok:
+            return results.json()
         return results.json()["detail"]
