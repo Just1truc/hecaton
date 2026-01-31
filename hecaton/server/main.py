@@ -193,7 +193,7 @@ def main():
     uvicorn.run(
         "hecaton.server.main:app", 
         host=args.host, 
-        port=args.port, 
+        port=int(args.port), 
         reload=False,
         ssl_keyfile=args.ssl_keyfile,
         ssl_certfile=args.ssl_certfile
