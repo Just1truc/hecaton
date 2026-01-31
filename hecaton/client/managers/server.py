@@ -80,8 +80,8 @@ def register(
 def login(
     ctx : typer.Context,
     server_name : str = typer.Argument(..., help="Server name to login to"),
-    username : str = typer.Option(..., prompt="Username", help="Username"),
-    password : str = typer.Option(..., prompt="Password", hide_input=True, help="Password")
+    username : str = typer.Option(..., prompt="    Username", help="Username"),
+    password : str = typer.Option(..., prompt="    Password", hide_input=True, help="Password")
 ):
     mgr : ServerManager = ctx.obj["server_mgr"]
     

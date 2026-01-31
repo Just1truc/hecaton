@@ -18,7 +18,7 @@ class HecatonServer:
         endpoint : str,
         payload : dict | None = None
     ):
-        ip = ip if ip.startswith('http') else f'http://{ip}'
+        ip = ip if ip.startswith('https') else f'https://{ip}'
         result = HecatonServer.str_to_method[method](f"{ip}{endpoint}",
         result = HecatonServer.str_to_method[method](f"{ip}{endpoint}",
             headers = { "Authorization" : f"Bearer {secret}" },
@@ -28,7 +28,7 @@ class HecatonServer:
         return result
     
     def login(ip: str, username: str, password: str):
-        ip = ip if ip.startswith('http') else f'http://{ip}'
+        ip = ip if ip.startswith('https') else f'https://{ip}'
         result = requests.post(f"{ip}/token", data={"username": username, "password": password})
         if result.ok:
             return result.json()
@@ -138,4 +138,26 @@ class HecatonServer:
         )
         if results.ok:
             return results.json()
+        return results.json()["detail"]
+
+    def create_user(
+        ip: str,
+        secret: str,
+        username: str,
+        password: str,
+        role: str
+    ):
+        results = HecatonServer.call_endpoint(
+            ip=ip,
+            secret=secret,
+            method="POST",
+            endpoint="/users/new",
+            payload={
+                "username": username,
+                "password": password,
+                "role": role
+            }
+        )
+        if results.ok:
+            return results.json()["message"]
         return results.json()["detail"]

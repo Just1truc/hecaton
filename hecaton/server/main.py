@@ -130,6 +130,13 @@ async def startup_check():
         else:
             print("WARNING: No admin user found. You should create one or set HECATON_ADMIN_PASS env var.")
 
+@app.post("/users/new", dependencies=[Depends(get_current_admin_user)])
+def create_user(user_dto: NewUserDTO):
+    uid = q.create_user(user_dto.username, get_password_hash(user_dto.password), user_dto.role)
+    if not uid:
+        raise HTTPException(status_code=400, detail="Username already exists")
+    return {"message": f"User {user_dto.username} created successfully", "user_id": uid}
+
 @app.get("/jobs", dependencies=[Depends(get_current_active_user)])
 def all_jobs():
     return provider_call(q, 'get_jobs', ())

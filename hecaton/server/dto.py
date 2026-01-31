@@ -35,3 +35,8 @@ class AssignedJobDTO(BaseModel):
     image_env : Optional[dict]
     status : str
     payload : str
+
+class NewUserDTO(BaseModel):
+    username : str
+    password : str
+    role : str = "user"
