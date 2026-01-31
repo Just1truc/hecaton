@@ -71,7 +71,7 @@ def register(
     ctx : typer.Context,
     ip : str = typer.Option(None, prompt="    Server IP", help= "Server IP"),
     name : str = typer.Option(None, prompt="    Local name", help= "Local name"),
-    secret : str = typer.Option(None, prompt="    Secret", help= "Local name")
+    secret : Optional[str] = typer.Option(None, hidden=True, help="Legacy Secret")
 ):
     mgr : ServerManager = ctx.obj["server_mgr"]
     mgr.register_server(ip, name, secret)
@@ -154,7 +154,7 @@ def server_update(
     ),
     secret: Optional[str] = typer.Option(
         None, "--secret",
-        callback=prompt_optional("    Secret (Press Enter to keep current value)", hide=True),
+        hidden=True,
         help="Local name / secret",
         show_default=False,
     )
