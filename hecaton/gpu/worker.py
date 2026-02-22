@@ -38,7 +38,7 @@ def start_worker(
                 image_env   = job["image_env"]
             )
             web_client.update_job(job["jid"], report["status"], { "output" : report["output"], "process_time" : report["process_time"] } )
-        
+
         # every 10 times, resync images
         if refresh_interval % REFRESH_FREQ == 0:
             web_client.update_status('SYNCHRONIZING')
@@ -46,7 +46,7 @@ def start_worker(
             web_client.update_status('IDLE')
             refresh_interval = 0
         else:
-            if job:
+            if not job:
                 # only say idle if SYNCHRONIZED
                 web_client.update_status('IDLE')
                     

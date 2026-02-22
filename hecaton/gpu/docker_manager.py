@@ -121,6 +121,7 @@ class DockerManager:
                         self.network_client.update_job_status(job_id, loaded["status"])
                     if loaded["status"] == "FINISHED" or loaded["status"] == "FAILED":
                         results = loaded
+                        break
                 except:
                     results = {
                         "output": "Failed to process program output",
@@ -132,5 +133,7 @@ class DockerManager:
         end = time.time()
         results["process_time"] = end - start
         os.remove(f"{shared}/result_{job_id}.json")
+        container.stop()
+        container.remove()
         
         return results

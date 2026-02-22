@@ -163,7 +163,7 @@ class SQLiteQueue:
                 i += 1
             
     def get_worker_job(self, worker_id : int) -> AssignedJobDTO | None:
-        row = self.execute("SELECT jobs.id, images.image_name, images.env, jobs.status, jobs.payload FROM jobs INNER JOIN images on jobs.image_id = images.id WHERE assigned_worker=?", (worker_id,)).fetchone()
+        row = self.execute("SELECT jobs.id, images.image_name, images.env, jobs.status, jobs.payload FROM jobs INNER JOIN images on jobs.image_id = images.id WHERE assigned_worker=? AND status NOT IN ('FAILED', 'FINISHED')", (worker_id,)).fetchone()
         if not row or not len(row):
             return None
         jid, image_name, image_env, status, payload = row
