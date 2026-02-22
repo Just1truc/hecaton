@@ -35,7 +35,7 @@ def start(handler : Callable[[ServerLessInput], dict]):
         if len(jobs):
             job = jobs[0]
             job_data = json.loads(open(f"/shared/{job}").read())
-            output = handler(ServerLessInput(job_data["input"]))
+            output = handler(ServerLessInput(input=job_data["input"]))
             report_job("COMPLETED", output)
             os.remove(f"/shared/{job}")
 
