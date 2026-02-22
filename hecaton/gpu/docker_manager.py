@@ -119,7 +119,7 @@ class DockerManager:
                     loaded = json.loads(file_content)
                     if loaded["status"] != last_status:
                         self.network_client.update_job_status(job_id, loaded["status"])
-                    if loaded["status"] == "COMPLETED" or loaded["status"] == "FAILED":
+                    if loaded["status"] == "FINISHED" or loaded["status"] == "FAILED":
                         results = loaded
                 except:
                     results = {

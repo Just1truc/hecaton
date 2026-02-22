@@ -59,7 +59,7 @@ class GPUWebClient:
         result = requests.get(f'{ip}/images', headers=self.headers)
         
         if not(result.ok):
-            raise RuntimeError(F"Failed to fetch images {result.json()['message']}")
+            raise RuntimeError(F"Failed to fetch images {result.json()['detail']}")
         
         return result.json()
     
@@ -79,7 +79,7 @@ class GPUWebClient:
             }
         )
         if not(result.ok):
-            raise RuntimeError(F"Failed to update worker status {result.json()['message']}")
+            raise RuntimeError(F"Failed to update worker status {result.json()['detail']}")
         
     def update_job_status(
         self,
@@ -107,11 +107,12 @@ class GPUWebClient:
             json={
                 "job_id" : jid,
                 "new_status" : status,
-                "new_payload" : payload
+                "new_payload" : json.dumps(payload)
             }
         )
+        print(result)
         if not(result.ok):
-            raise RuntimeError(F"Failed to update worker {result.json()['message']}")
+            raise RuntimeError(F"Failed to update worker {result.json()['detail']}")
     
     def job_assigned(self):
         

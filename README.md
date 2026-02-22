@@ -101,7 +101,7 @@ print(f"Submitted Job ID: {job_id}")
 # Poll for completion
 while True:
     job_info = HecatonServer.get_job(server_ip, token, job_id)
-    if job_info[1] in ("COMPLETED", "FAILED"):
+    if job_info[1] in ("FINISHED", "FAILED"):
         print("Result:", job_info[2])
         break
     time.sleep(2)

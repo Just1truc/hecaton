@@ -36,7 +36,7 @@ def start(handler : Callable[[ServerLessInput], dict]):
             job = jobs[0]
             job_data = json.loads(open(f"/shared/{job}").read())
             output = handler(ServerLessInput(input=job_data["input"]))
-            report_job("COMPLETED", output)
+            report_job("FINISHED", output)
             os.remove(f"/shared/{job}")
 
         time.sleep(1)

@@ -206,6 +206,8 @@ class SQLiteQueue:
     
     # Set Job Status
     def update_job(self, job_id : str, new_status : str, new_payload : str | None):
+        print(job_id, new_status, new_payload)
+        print("UPDATE jobs SET status=?, payload=? WHERE id=?", (new_status, new_payload, job_id))
         if (new_payload):
             self.execute("UPDATE jobs SET status=?, payload=? WHERE id=?", (new_status, new_payload, job_id))
         else:

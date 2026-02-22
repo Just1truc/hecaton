@@ -1,5 +1,5 @@
 from hecaton.serverless import start, ServerLessInput
-from time import time
+from time import sleep
 
 def my_handler(data: ServerLessInput):
     """
@@ -9,7 +9,7 @@ def my_handler(data: ServerLessInput):
     job_payload = data.input
     
     print(f"Processing job with data: {job_payload}")
-    time.sleep(10)
+    sleep(10)
     
     # Perform your compute task here (e.g. process data, train a model, generate image)
     # The return value must be a dictionary.
