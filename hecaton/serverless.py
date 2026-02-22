@@ -3,10 +3,10 @@ import time
 import json
 
 from typing import Callable, Any
-from pydantic import BaseModel, Json
+from pydantic import BaseModel
 
 class ServerLessInput(BaseModel):
-    input : Json[Any]
+    input : Any
 
 def report_job(
     new_status : str,
