@@ -2,8 +2,8 @@ import os
 import time
 import json
 
-from typing import Callable
-from pydantic import BaseModel, Json, Any
+from typing import Callable, Any
+from pydantic import BaseModel, Json
 
 class ServerLessInput(BaseModel):
     input : Json[Any]

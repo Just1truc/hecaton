@@ -12,7 +12,6 @@ APP_AUTHOR = "Just1truc"
 
 def data_dir() -> Path:
     d = user_data_path(appname=APP_NAME, appauthor=APP_AUTHOR, roaming=False)
-    print(d)
     d.mkdir(parents=True, exist_ok=True)
     return d
 

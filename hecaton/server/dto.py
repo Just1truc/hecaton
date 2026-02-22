@@ -6,7 +6,7 @@ class NewJobDTO(BaseModel):
     image : str
 
 class JobUpdateDTO(BaseModel):
-    job_id : int
+    job_id : str
     new_status : str
     new_payload : Optional[str] = None
 

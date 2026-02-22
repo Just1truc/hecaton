@@ -94,7 +94,7 @@ class GPUWebClient:
             }
         )
         if not(result.ok):
-            raise RuntimeError(F"Failed to update worker status {result.json()['message']}")
+            raise RuntimeError(F"Failed to update worker status {result.json()['detail']}")
     
     def update_job(
         self,
@@ -122,10 +122,15 @@ class GPUWebClient:
         # call server to check if worker as a job assigned
         # needs a new endpoint in server/main.py that calls get_worker_job
         ip = self.ip if self.ip.startswith('http') else f'https://{self.ip}'
-        result = requests.get(f'{ip}/worker/{self.worker_id}', headers=self.headers)
-        
-        if not(result.ok):
-            raise RuntimeError(F"Failed to fetch worker job {result.json()['message']}")
+        try:
+            result = requests.get(f'{ip}/worker/{self.worker_id}', headers=self.headers)
+
+            if not(result.ok):
+                raise RuntimeError(F"Failed to fetch worker job {result.json()['detail']}")
+
+        except Exception as e:
+            print(f"Failed to fetch worker job: {e}")
+            return None
         
         jobs = result.json()["jobs"]
         return jobs[0] if len(jobs) else None

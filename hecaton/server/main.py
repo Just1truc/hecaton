@@ -106,6 +106,7 @@ def provider_call(provider, method : Callable, args : Tuple):
     try:
         return getattr(provider, method)(*args)
     except Exception as e:
+        # print(str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.on_event('startup')
@@ -155,6 +156,7 @@ def get_job(jid):
 def update_job(update_dto : JobUpdateDTO):
     # TODO: Verify that only the assigned worker can update the job? Or admin
     # For now, just authenticated users
+    print(update_dto)
     return provider_call(q, "update_job", (update_dto.job_id, update_dto.new_status, update_dto.new_payload))
 
 @app.get("/images", dependencies=[Depends(get_current_active_user)])
@@ -191,8 +193,8 @@ def update_worker(worker_update_dto : WorkerStatusUpdateDTO):
 
 # endpoint to get a worker's current job
 @app.get("/worker/{wid}", dependencies=[Depends(get_current_active_user)])
-def get_worker_job(worker_id : int):
-    job : AssignedJobDTO | None = provider_call(q, "get_worker_job", (worker_id,))
+def get_worker_job(wid : int):
+    job : AssignedJobDTO | None = provider_call(q, "get_worker_job", (wid,))
     return { "jobs" : [job.model_dump()] if job else [] }
 
 def main():

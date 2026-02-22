@@ -143,25 +143,46 @@ class SQLiteQueue:
         query = ",".join(query)
         self.execute(f"UPDATE images SET {query} WHERE image_name=?", args)
 
-    # Assign idle workers to jobs that don't have an assigned worker
+    # Assign idle workers to jobs that don't have an assigned worker
     def assign_jobs(self) -> str:
-        
-        available_workers = self.execute("SELECT * FROM workers WHERE status='IDLE'").fetchall()
-        awaiting_jobs = self.execute("SELECT * FROM jobs WHERE status='IN_QUEUE'").fetchall()
-        
-        for worker in available_workers:
-            job_to_assign = awaiting_jobs.pop(0)
-            # Update the job
-            self.execute("UPDATE jobs SET assigned_worker=?, status='ASSIGNED', updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?", (worker.id, job_to_assign.id))
-            # Update the worker to REQUESTED
-            self.update_worker_status(worker.id, 'REQUESTED')
+        with self._lock:
+            available_workers = self.conn.execute("SELECT * FROM workers WHERE status='IDLE'").fetchall()
+            awaiting_jobs = self.conn.execute("SELECT * FROM jobs WHERE status='IN_QUEUE'").fetchall()
+            
+            i = 0
+            for worker in available_workers:
+                if i >= len(awaiting_jobs):
+                    break
+                job_to_assign = awaiting_jobs[i]
+                
+                # Update the job
+                self.conn.execute("UPDATE jobs SET assigned_worker=?, status='ASSIGNED', updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?;", (worker[0], job_to_assign[0]))
+                
+                # Update the worker to REQUESTED
+                self.conn.execute("UPDATE workers SET status=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?", ('REQUESTED', worker[0]))
+                i += 1
             
     def get_worker_job(self, worker_id : int) -> AssignedJobDTO | None:
-        row = self.execute("SELECT (jobs.id, images.image_name, image.env, jobs.status, jobs.payload) FROM jobs INNER JOIN images on jobs.image_id = images.id WHERE assigned_worker=?", (worker_id,)).fetchone()
+        row = self.execute("SELECT jobs.id, images.image_name, images.env, jobs.status, jobs.payload FROM jobs INNER JOIN images on jobs.image_id = images.id WHERE assigned_worker=?", (worker_id,)).fetchone()
         if not row or not len(row):
             return None
         jid, image_name, image_env, status, payload = row
-        return AssignedJobDTO(jid, image_name, (image_env and json.loads(image_env)), status, payload)
+        
+        parsed_env = None
+        if image_env:
+            try:
+                env_list = json.loads(image_env)
+                parsed_env = {item['key']: item['value'] for item in env_list} if isinstance(env_list, list) else env_list
+            except:
+                parsed_env = None
+                
+        return AssignedJobDTO(
+            jid=str(jid), 
+            image_name=str(image_name), 
+            image_env=parsed_env, 
+            status=str(status), 
+            payload=str(payload)
+        )
     
     # Update workers status
     def update_worker_status(self, worker_id : int, worker_status : str):

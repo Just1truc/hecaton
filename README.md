@@ -80,6 +80,69 @@ Submit a job with a payload file and a target image:
 hecaton job new <path_to_payload_file> <docker_image_name>
 ```
 
+### 5. Programmatic Job Submission
+
+You can also submit and monitor jobs using the Python client library:
+
+```python
+import time
+from hecaton.client.managers.api import HecatonServer
+
+server_ip = "http://localhost:8181"
+token = "YOUR_JWT_TOKEN"
+
+# Submit the job (payload.json is read and sent to the worker)
+job_id = HecatonServer.new_job(
+    ip=server_ip, secret=token, 
+    file_path="payload.json", image="my-custom-image:latest"
+)
+print(f"Submitted Job ID: {job_id}")
+
+# Poll for completion
+while True:
+    job_info = HecatonServer.get_job(server_ip, token, job_id)
+    if job_info[1] in ("COMPLETED", "FAILED"):
+        print("Result:", job_info[2])
+        break
+    time.sleep(2)
+```
+
+### 6. Writing a Payload and Custom Docker Image
+
+Hecaton uses a long-running container model to process jobs. When you submit a job to a specific Docker image, Hecaton ensures a container of that image is running and passes the job payload to it.
+
+To easily write the python code for your custom Docker image, you should use Hecaton's built-in `serverless` module.
+
+**Example `handler.py` (Entrypoint for your Docker image):**
+```python
+from hecaton.serverless import start, ServerLessInput
+
+def my_handler(data: ServerLessInput):
+    # 'data.input' contains the payload you submitted via the CLI or API (e.g., payload.json)
+    job_payload = data.input
+    
+    print(f"Processing job with data: {job_payload}")
+    
+    # Perform your GPU compute or other tasks here
+    result = {"status": "success", "processed_data": job_payload}
+    
+    # Return the result dict, it will be uploaded back to the server
+    return result
+
+if __name__ == "__main__":
+    # 'start()' keeps the container running and polls the worker for jobs
+    start(my_handler)
+```
+
+**Dockerfile Example:**
+```dockerfile
+FROM python:3.9-slim
+RUN pip install hecaton
+COPY handler.py /app/handler.py
+CMD ["python", "/app/handler.py"]
+```
+Once this image is built, pushed, and registered on the Hecaton server, you can submit payloads to it.
+
 ## Command Reference
 
 ### Client CLI (`hecaton`)

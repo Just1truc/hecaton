@@ -28,7 +28,7 @@ class DockerManager:
         
         # get local images, compare
         online_images   = [image[1] for image in images]
-        local_images    = [image.tags[0].split(":")[0] for image in self.docker_client.images.list()]
+        local_images    = [image.tags[0].split(":")[0] for image in self.docker_client.images.list() if len(image.tags)]
         
         # Syncing images
         for online_image in online_images:
@@ -57,6 +57,13 @@ class DockerManager:
         print(f"Created shared directory at: {shared_dir}")
         
         clean_env = (env and {var["key"]: var["value"] for var in env }) or {}
+        
+        # if container name already exists, remove it
+        try:
+            self.docker_client.containers.get(f"{image.replace('/', '_')}_instance").remove()
+        except:
+            pass
+
         container = self.docker_client.containers.run(
             image=image,
             detach=True,
@@ -106,8 +113,8 @@ class DockerManager:
         }
         last_status = "IN_PROGRESS"
         while True:
-            if os.path.exists(f"{shared}/result_[{job_id}].json"):
-                file_content = open(f"{shared}/result_[{job_id}].json")
+            if os.path.exists(f"{shared}/result_{job_id}.json"):
+                file_content = open(f"{shared}/result_{job_id}.json").read()
                 try:
                     loaded = json.loads(file_content)
                     if loaded["status"] != last_status:
