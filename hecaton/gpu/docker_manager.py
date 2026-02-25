@@ -30,10 +30,32 @@ class DockerManager:
         online_images   = [image[1] for image in images]
         local_images    = [image.tags[0].split(":")[0] for image in self.docker_client.images.list() if len(image.tags)]
         
+        MAX_LAYER_SIZE = 2 * 1024 * 1024 * 1024 # 2 GB
+        MAX_IMAGE_SIZE = 5 * 1024 * 1024 * 1024 # 5 GB
+        
         # Syncing images
         for online_image in online_images:
             if not online_image in local_images:
-                self.docker_client.images.pull(online_image)
+                total_size = 0
+                layer_sizes = {}
+                
+                try:
+                    for line in self.docker_client.api.pull(online_image, stream=True, decode=True):
+                        if 'id' in line and 'progressDetail' in line and 'total' in line['progressDetail']:
+                            layer_id = line['id']
+                            layer_size = line['progressDetail']['total']
+                            
+                            if layer_id not in layer_sizes:
+                                layer_sizes[layer_id] = layer_size
+                                total_size += layer_size
+                                
+                                if layer_size > MAX_LAYER_SIZE:
+                                    raise Exception(f"Layer {layer_id} exceeds maximum size of 2GB")
+                                if total_size > MAX_IMAGE_SIZE:
+                                    raise Exception(f"Total image size exceeds maximum size of 5GB")
+                except Exception as e:
+                    print(f"Failed to pull image {online_image}: {str(e)}")
+                    raise e
            
     def __start_container(
         self,
