@@ -184,7 +184,7 @@ def all_workers():
 
 @app.post("/workers/connect", dependencies=[Depends(get_current_active_user)])
 def connect_worker(worker_dto : WorkerConnectionDTO):
-    return { "worker_id" : provider_call(q, "connect_worker", (worker_dto.worker_id,)) }
+    return { "worker_id" : provider_call(q, "connect_worker", (worker_dto.worker_id, worker_dto.gpu_name)) }
 
 @app.post("/worker/update", dependencies=[Depends(get_current_active_user)])
 def update_worker(worker_update_dto : WorkerStatusUpdateDTO):

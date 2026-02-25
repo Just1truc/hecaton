@@ -10,7 +10,17 @@ server_app = typer.Typer()
 class ServerManager:
     
     def __init__(self):
-        self.selected_server = None
+        pass
+        
+    @property
+    def selected_server(self):
+        with with_locked_db() as db:
+            return db.selected_server
+            
+    @selected_server.setter
+    def selected_server(self, value):
+        with with_locked_db(mutate=True) as db:
+            db.selected_server = value
         
     def list_servers(self) -> List[str]:
         with with_locked_db() as db:
@@ -55,10 +65,11 @@ class ServerManager:
     def connected_server(
         self
     ):
-        if self.selected_server == None:
+        selected = self.selected_server
+        if selected is None:
             raise Exception('error: Not connected to a server')
         else:
-            return self.server_info(self.selected_server)
+            return self.server_info(selected)
         
 def complete_server_name(ctx : typer.Context, param: click.Parameter, incomplete : str) -> List[str]:
     
@@ -107,6 +118,7 @@ def login(
                         s.secret = s.token
                         s.username = username
                         # s.secret = None # Should we clear legacy secret?
+            mgr.selected_server = server_name
             typer.echo(f"Successfully logged in to {server_name}")
         else:
             typer.echo("Login failed: Invalid credentials or server error")

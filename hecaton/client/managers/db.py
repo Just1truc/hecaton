@@ -23,6 +23,7 @@ class ServerInfo(BaseModel):
 class Database(BaseModel):
     version: int = SCHEMA_VERSION
     servers: List[ServerInfo] = Field(default_factory=list)
+    selected_server: str | None = None
 
 APP_NAME = "hecaton"
 APP_AUTHOR = "Just1truc"

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hecaton"
-version = "1.0.0"
+version = "1.0.1"
 description = "Hecaton distributed compute framework"
 authors = [{ name = "Just1duc", email = "aworld068@gmail.com" }]
 readme = "README.md"

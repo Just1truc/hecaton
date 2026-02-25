@@ -55,3 +55,17 @@ def save_worker_config(ip : str, worker_config : WorkerConfig):
     register[ip] = worker_config.model_dump()
     open(gpu_data_path, "w").write(json.dumps(register))
 
+def get_gpu_name() -> str | None:
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        # return the first GPU name or None
+        names = result.stdout.strip().split("\n")
+        return names[0] if names and names[0] else None
+    except (subprocess.SubprocessError, FileNotFoundError):
+        return None

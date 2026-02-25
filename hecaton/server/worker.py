@@ -74,6 +74,10 @@ class SQLiteQueue:
         );
         CREATE INDEX IF NOT EXISTS jobs_status_created_idx ON jobs(status, created_at);
         """)
+        try:
+            self.execute("ALTER TABLE workers ADD COLUMN gpu_name TEXT;")
+        except sqlite3.OperationalError:
+            pass # Column likely already exists
 
     # New job
     def enqueue(self, payload: str, image : str):
@@ -96,7 +100,7 @@ class SQLiteQueue:
     
     # Get all workers
     def get_workers(self):
-        row = self.execute("SELECT * FROM workers").fetchall()
+        row = self.execute("SELECT id, status, updated_at, gpu_name FROM workers").fetchall()
         return row
     
     # Get all jobs
@@ -189,18 +193,18 @@ class SQLiteQueue:
         self.execute("UPDATE workers SET status=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?", (worker_status, worker_id))
     
     # Connect new worker
-    def connect_worker(self, worker_id : int | None):
+    def connect_worker(self, worker_id : int | None, gpu_name: str | None = None):
         # connecting existing worker
         if (worker_id):
-            self.update_worker_status(worker_id=worker_id, worker_status='INITIALIZING')
+            self.execute("UPDATE workers SET status='INITIALIZING', gpu_name=COALESCE(?, gpu_name) WHERE id=?", (gpu_name, worker_id))
             return worker_id
         else:
             # Connecting new worker
             max_id = self.execute("SELECT MAX(id) FROM workers").fetchone()[0]
             new_id = (int(max_id) if max_id is not None else 0) + 1
             self.execute(
-                "INSERT INTO workers(id,status) VALUES(?, 'INITIALIZING')",
-                (new_id,),
+                "INSERT INTO workers(id,status,gpu_name) VALUES(?, 'INITIALIZING', ?)",
+                (new_id, gpu_name),
             )
             return new_id
     

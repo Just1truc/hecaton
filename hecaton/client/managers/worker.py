@@ -36,13 +36,12 @@ def list_workers(
             typer.echo("No workers found.")
             return
 
-        typer.echo(f"{'ID':<40} {'STATUS':<15} {'LAST SEEN'}")
-        typer.echo("-" * 80)
+        typer.echo(f"{'ID':<40} {'STATUS':<15} {'GPU':<25} {'LAST SEEN'}")
+        typer.echo("-" * 105)
         for w in workers:
-            # w structure depends on SQL query: SELECT * FROM workers
-            # workers table: id TEXT PRIMARY KEY, status TEXT, updated_at TEXT
-            w_id, status, updated_at = w
-            typer.echo(f"{w_id:<40} {status:<15} {updated_at}")
+            w_id, status, updated_at, gpu_name = w
+            display_gpu = gpu_name if gpu_name else "N/A"
+            typer.echo(f"{w_id:<40} {status:<15} {display_gpu:<25} {updated_at}")
 
     except Exception as e:
         typer.echo(f"Error: {e}")

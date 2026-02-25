@@ -89,7 +89,7 @@ def ensure_config_exists(ip: str) -> bool:
         typer.echo("🔐 Setting up authentication for the service...")
         config = load_worker_config(ip)
         
-        if config and config.secret:
+        if config:
             typer.echo("✅ Authentication configured successfully!")
             return True
         else:
@@ -113,7 +113,7 @@ Requires=docker.service
 [Service]
 Type=simple
 User=root
-ExecStart={python_path} {script_path} run --ip {ip}
+ExecStart={python_path} {script_path} run {ip}
 WorkingDirectory={os.path.dirname(script_path)}
 Restart=always
 RestartSec=10
@@ -195,7 +195,7 @@ def install(
     try:
         # Use tee to write the file with sudo
         tee_process = subprocess.Popen(
-            ['sudo', 'tee', SERVICE_FILE],
+            ['pkexec', 'tee', SERVICE_FILE],
             stdin=subprocess.PIPE,
             text=True
         )
@@ -406,7 +406,13 @@ def run(ip: str = typer.Argument(..., help="Server IP address")):
     try:
         # Your original main logic here
         worker_config: WorkerConfig = load_worker_config(ip)
-        gpu_web_client = GPUWebClient(ip, worker_config=worker_config)
+        gpu_name = get_gpu_name()
+        if gpu_name:
+            typer.echo(f"🖥️  Detected GPU: {gpu_name}")
+        else:
+            typer.echo(f"🖥️  Running in CPU-only mode")
+            
+        gpu_web_client = GPUWebClient(ip, worker_config=worker_config, gpu_name=gpu_name)
         gpu_web_client.update_status('INITIALIZING')
         docker_manager = DockerManager(gpu_web_client)
         gpu_web_client.update_status('IDLE')

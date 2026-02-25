@@ -6,7 +6,8 @@ class GPUWebClient:
     def __init__(
         self,
         ip : str,
-        worker_config : WorkerConfig
+        worker_config : WorkerConfig,
+        gpu_name: str | None = None
     ):
         self.ip = ip
         self.worker_id  = worker_config.worker_id
@@ -20,7 +21,7 @@ class GPUWebClient:
             "Authorization" : f"Bearer {self.token}" if self.token else ""
         }
 
-        self.__connect_server()
+        self.__connect_server(gpu_name)
     
     def login(self, config: WorkerConfig):
         ip = self.ip if self.ip.startswith('http') else f'https://{self.ip}'
@@ -36,12 +37,16 @@ class GPUWebClient:
         except Exception as e:
             print(f"Login error: {e}")
 
-    def __connect_server(self):
+    def __connect_server(self, gpu_name: str | None = None):
         ip = self.ip if self.ip.startswith('http') else f'https://{self.ip}'
+        payload = {}
+        if len(self.worker_id):
+            payload["worker_id"] = int(self.worker_id)
+        if gpu_name:
+            payload["gpu_name"] = gpu_name
+            
         result = requests.post(f'{ip}/workers/connect',
-            json={
-                **({"worker_id" : int(self.worker_id)} if len(self.worker_id) else {})
-            },
+            json=payload,
             headers=self.headers
         )
         if not(result.ok):

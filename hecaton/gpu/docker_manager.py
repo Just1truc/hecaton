@@ -64,6 +64,13 @@ class DockerManager:
         except:
             pass
 
+        import docker
+        from hecaton.gpu.utils import get_gpu_name
+
+        device_requests = []
+        if get_gpu_name():
+            device_requests.append(docker.types.DeviceRequest(count=-1, capabilities=[['gpu']]))
+
         container = self.docker_client.containers.run(
             image=image,
             detach=True,
@@ -71,7 +78,8 @@ class DockerManager:
             volumes={
                 shared_dir: {'bind': '/shared', 'mode': 'rw'}
             },
-            name=f"{image.replace('/', '_')}_instance"
+            name=f"{image.replace('/', '_')}_instance",
+            device_requests=device_requests
         )
         
         return container, shared_dir

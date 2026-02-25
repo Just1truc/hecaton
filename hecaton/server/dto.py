@@ -25,6 +25,7 @@ class NewImageDTO(BaseModel):
     
 class WorkerConnectionDTO(BaseModel):
     worker_id : Optional[int] = None
+    gpu_name : Optional[str] = None
     
 class WorkerStatusUpdateDTO(BaseModel):
     worker_id : int
