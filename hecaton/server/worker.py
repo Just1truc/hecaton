@@ -11,11 +11,31 @@ def check_docker_image(image : str):
     assert len(image.split('/')) == 2, "Invalid docker image format"
     user, image_name = image.split("/")
     
-    result = requests.get(f'http://hub.docker.com/v2/namespaces/{user}/repositories/{image_name}').json()
-    if "message" in result and result["message"] == "object no found":
-        raise Exception(f"Image is not available or doesn't exists ({image})")
+    tag = "latest"
+    if ":" in image_name:
+        image_name, tag = image_name.split(":")
     
-    return { "description" : result["description"] }
+    result = requests.get(f'http://hub.docker.com/v2/namespaces/{user}/repositories/{image_name}').json()
+    if "message" in result and result["message"] in ("object no found", "object not found"):
+        raise Exception(f"Image is not available or doesn't exists ({image})")
+        
+    tag_result = requests.get(f'https://hub.docker.com/v2/namespaces/{user}/repositories/{image_name}/tags/{tag}').json()
+    if "message" in tag_result and tag_result.get("message") in ("object no found", "object not found"):
+        raise Exception(f"Tag {tag} is not available for image ({image})")
+        
+    full_size = tag_result.get("full_size", 0)
+    if full_size == 0:
+        # Some tags might not report full_size directly, or could be architecture specific list. 
+        # Attempt to sum up from images array if full_size is absent or 0
+        images_list = tag_result.get("images", [])
+        if images_list:
+            full_size = max([img.get("size", 0) for img in images_list])
+            
+    MAX_IMAGE_SIZE = 5 * 1024 * 1024 * 1024  # 5 GB
+    if full_size > MAX_IMAGE_SIZE:
+        raise Exception(f"Image {image} exceeds the maximum allowed size of 5GB (Size: {full_size} bytes)")
+    
+    return { "description" : result.get("description", "") }
 
 class SQLiteQueue:
     def __init__(self, path="jobs.db"):
