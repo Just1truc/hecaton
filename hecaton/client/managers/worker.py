@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import typer
 
 from hecaton.client.managers.api import HecatonServer

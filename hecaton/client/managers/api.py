@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 # File that contain the class that communicates with the hecaton's server
 from typing import List, Optional, Tuple
 

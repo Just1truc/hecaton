@@ -1,11 +1,10 @@
 from __future__ import annotations
+
 # from hecaton.gpu.utils import *
 # from hecaton.gpu.web_client import GPUWebClient
 # from hecaton.gpu.docker_manager import DockerManager
 # from hecaton.gpu.worker import start_worker
-
 # # Main code (Outside the docker)
-
 # def main():
 #     # Outside dockers (in the server)
 #     # main =>
@@ -32,9 +31,7 @@ from __future__ import annotations
 #     # - check the folder every 3 seconds
 #     # - if folder contain output, upload output to server if status is completed (The output is a json file with the status) (allow workers to update with custom statuses)
 #     start_worker(gpu_web_client, docker_manager)
-
 # if __name__ == "__main__":
-
 #     main()
 import os
 import subprocess

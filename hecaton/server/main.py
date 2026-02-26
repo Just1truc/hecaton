@@ -1,9 +1,10 @@
 from __future__ import annotations
+
 import os
 import shutil
 from datetime import timedelta
 from pathlib import Path
-from typing import Callable, Tuple
+from typing import Tuple
 
 import uvicorn
 from dotenv import load_dotenv
