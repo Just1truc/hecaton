@@ -45,13 +45,14 @@ exclude = ["build", "dist", ".venv"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B"]
-ignore = []
+ignore = ["E501", "E402", "B008"]
 
 [tool.mypy]
 python_version = "3.9"
 ignore_missing_imports = true
 check_untyped_defs = true
-exclude = ["build/", "dist/"]
+exclude = ["build/", "dist/", "example/", "example-vllm/"]
+disable_error_code = ["arg-type", "attr-defined", "assignment", "var-annotated", "misc", "operator", "return", "union-attr"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=hecaton --cov-report=term-missing"

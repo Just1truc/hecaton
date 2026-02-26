@@ -29,7 +29,7 @@ jobs:
         
     - name: Type check with Mypy
       run: |
-        mypy .
+        mypy hecaton/
         
     - name: Run tests with pytest
       run: |

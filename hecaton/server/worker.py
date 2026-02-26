@@ -1,4 +1,9 @@
-import json, sqlite3, uuid, threading
+from __future__ import annotations
+import json
+import sqlite3
+import threading
+import uuid
+
 import requests
 
 from hecaton.server.dto import AssignedJobDTO, UpdateImageDTO
@@ -6,31 +11,33 @@ from hecaton.server.dto import AssignedJobDTO, UpdateImageDTO
 # In seconds
 TIMEOUT_TIME = 30
 
-def check_docker_image(image : str):
-    
-    assert len(image.split('/')) == 2, "Invalid docker image format"
+
+def check_docker_image(image: str):
+    assert len(image.split("/")) == 2, "Invalid docker image format"
     user, image_name = image.split("/")
-    
-    result = requests.get(f'http://hub.docker.com/v2/namespaces/{user}/repositories/{image_name}').json()
+
+    result = requests.get(
+        f"http://hub.docker.com/v2/namespaces/{user}/repositories/{image_name}"
+    ).json()
     if "message" in result and result["message"] == "object no found":
         raise Exception(f"Image is not available or doesn't exists ({image})")
-    
-    return { "description" : result["description"] }
+
+    return {"description": result["description"]}
+
 
 class SQLiteQueue:
     def __init__(self, path="jobs.db"):
-        
         self._lock = threading.RLock()
         self.conn = sqlite3.connect(
             path,
             timeout=30,
-            isolation_level=None,   # autocommit
-            check_same_thread=False # <-- key
+            isolation_level=None,  # autocommit
+            check_same_thread=False,  # <-- key
         )
         self.execute("PRAGMA journal_mode=WAL;")
         self.execute("PRAGMA synchronous=NORMAL;")
         self._init_schema()
-        
+
     def execute(self, sql, params=()):
         with self._lock:
             return self.conn.execute(sql, params)
@@ -77,18 +84,20 @@ class SQLiteQueue:
         try:
             self.execute("ALTER TABLE workers ADD COLUMN gpu_name TEXT;")
         except sqlite3.OperationalError:
-            pass # Column likely already exists
+            pass  # Column likely already exists
 
     # New job
-    def enqueue(self, payload: str, image : str):
-        row = self.execute("SELECT * FROM images WHERE image_name=?", (image,)).fetchone()
-        
+    def enqueue(self, payload: str, image: str):
+        row = self.execute(
+            "SELECT * FROM images WHERE image_name=?", (image,)
+        ).fetchone()
+
         if not row:
             raise Exception(f"No image found with the name: {image}")
-        
+
         # row is (id, image_name, description, env)
         id_ = row[0]
-        
+
         jid = str(uuid.uuid4())
         self.execute(
             "INSERT INTO jobs(id,status,payload,image_id) VALUES(?, 'IN_QUEUE', ?, ?)",
@@ -96,44 +105,46 @@ class SQLiteQueue:
         )
         return jid
 
-    def _now(self): return ("".join,)
-    
+    def _now(self):
+        return ("".join,)
+
     # Get all workers
     def get_workers(self):
-        row = self.execute("SELECT id, status, updated_at, gpu_name FROM workers").fetchall()
+        row = self.execute(
+            "SELECT id, status, updated_at, gpu_name FROM workers"
+        ).fetchall()
         return row
-    
+
     # Get all jobs
     def get_jobs(self):
-        row = self.execute("SELECT jobs.id, images.image_name, jobs.status, jobs.updated_at FROM jobs INNER JOIN images on jobs.image_id = images.id").fetchall()
+        row = self.execute(
+            "SELECT jobs.id, images.image_name, jobs.status, jobs.updated_at FROM jobs INNER JOIN images on jobs.image_id = images.id"
+        ).fetchall()
         return row
 
     # Get all images
     def get_images(self):
         row = self.execute("SELECT * FROM images").fetchall()
         return row
-    
-    def get_image(self, imid : int):
+
+    def get_image(self, imid: int):
         return self.execute("SELECT * FROM images WHERE id=?", (imid,)).fetchone()
-    
+
     # Post new image
-    def new_image(self, image : str):
+    def new_image(self, image: str):
         # Check if image is a valid docker image + get information on docker image
         repo_info = check_docker_image(image)
-        
+
         max_id = self.execute("SELECT MAX(id) FROM images").fetchone()[0]
         # max_id can be None if table empty
         new_id = (max_id or 0) + 1
-        
+
         self.execute(
             "INSERT INTO images(id,image_name, description) VALUES(?, ?, ?)",
-            (new_id, image, repo_info['description']),
+            (new_id, image, repo_info["description"]),
         )
-        
-    def update_image(
-        self,
-        image_update : UpdateImageDTO
-    ):
+
+    def update_image(self, image_update: UpdateImageDTO):
         query = []
         args = []
         if image_update.description:
@@ -150,53 +161,76 @@ class SQLiteQueue:
     # Assign idle workers to jobs that don't have an assigned worker
     def assign_jobs(self) -> str:
         with self._lock:
-            available_workers = self.conn.execute("SELECT * FROM workers WHERE status='IDLE'").fetchall()
-            awaiting_jobs = self.conn.execute("SELECT * FROM jobs WHERE status='IN_QUEUE'").fetchall()
-            
+            available_workers = self.conn.execute(
+                "SELECT * FROM workers WHERE status='IDLE'"
+            ).fetchall()
+            awaiting_jobs = self.conn.execute(
+                "SELECT * FROM jobs WHERE status='IN_QUEUE'"
+            ).fetchall()
+
             i = 0
             for worker in available_workers:
                 if i >= len(awaiting_jobs):
                     break
                 job_to_assign = awaiting_jobs[i]
-                
+
                 # Update the job
-                self.conn.execute("UPDATE jobs SET assigned_worker=?, status='ASSIGNED', updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?;", (worker[0], job_to_assign[0]))
-                
+                self.conn.execute(
+                    "UPDATE jobs SET assigned_worker=?, status='ASSIGNED', updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?;",
+                    (worker[0], job_to_assign[0]),
+                )
+
                 # Update the worker to REQUESTED
-                self.conn.execute("UPDATE workers SET status=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?", ('REQUESTED', worker[0]))
+                self.conn.execute(
+                    "UPDATE workers SET status=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?",
+                    ("REQUESTED", worker[0]),
+                )
                 i += 1
-            
-    def get_worker_job(self, worker_id : int) -> AssignedJobDTO | None:
-        row = self.execute("SELECT jobs.id, images.image_name, images.env, jobs.status, jobs.payload FROM jobs INNER JOIN images on jobs.image_id = images.id WHERE assigned_worker=? AND status NOT IN ('FAILED', 'FINISHED')", (worker_id,)).fetchone()
+
+    def get_worker_job(self, worker_id: int) -> AssignedJobDTO | None:
+        row = self.execute(
+            "SELECT jobs.id, images.image_name, images.env, jobs.status, jobs.payload FROM jobs INNER JOIN images on jobs.image_id = images.id WHERE assigned_worker=? AND status NOT IN ('FAILED', 'FINISHED')",
+            (worker_id,),
+        ).fetchone()
         if not row or not len(row):
             return None
         jid, image_name, image_env, status, payload = row
-        
+
         parsed_env = None
         if image_env:
             try:
                 env_list = json.loads(image_env)
-                parsed_env = {item['key']: item['value'] for item in env_list} if isinstance(env_list, list) else env_list
-            except:
+                parsed_env = (
+                    {item["key"]: item["value"] for item in env_list}
+                    if isinstance(env_list, list)
+                    else env_list
+                )
+            except Exception:
                 parsed_env = None
-                
+
         return AssignedJobDTO(
-            jid=str(jid), 
-            image_name=str(image_name), 
-            image_env=parsed_env, 
-            status=str(status), 
-            payload=str(payload)
+            jid=str(jid),
+            image_name=str(image_name),
+            image_env=parsed_env,
+            status=str(status),
+            payload=str(payload),
         )
-    
+
     # Update workers status
-    def update_worker_status(self, worker_id : int, worker_status : str):
-        self.execute("UPDATE workers SET status=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?", (worker_status, worker_id))
-    
+    def update_worker_status(self, worker_id: int, worker_status: str):
+        self.execute(
+            "UPDATE workers SET status=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?",
+            (worker_status, worker_id),
+        )
+
     # Connect new worker
-    def connect_worker(self, worker_id : int | None, gpu_name: str | None = None):
+    def connect_worker(self, worker_id: int | None, gpu_name: str | None = None):
         # connecting existing worker
-        if (worker_id):
-            self.execute("UPDATE workers SET status='INITIALIZING', gpu_name=COALESCE(?, gpu_name) WHERE id=?", (gpu_name, worker_id))
+        if worker_id:
+            self.execute(
+                "UPDATE workers SET status='INITIALIZING', gpu_name=COALESCE(?, gpu_name) WHERE id=?",
+                (gpu_name, worker_id),
+            )
             return worker_id
         else:
             # Connecting new worker
@@ -207,25 +241,35 @@ class SQLiteQueue:
                 (new_id, gpu_name),
             )
             return new_id
-    
+
     # Set Job Status
-    def update_job(self, job_id : str, new_status : str, new_payload : str | None):
+    def update_job(self, job_id: str, new_status: str, new_payload: str | None):
         print(job_id, new_status, new_payload)
-        print("UPDATE jobs SET status=?, payload=? WHERE id=?", (new_status, new_payload, job_id))
-        if (new_payload):
-            self.execute("UPDATE jobs SET status=?, payload=? WHERE id=?", (new_status, new_payload, job_id))
+        print(
+            "UPDATE jobs SET status=?, payload=? WHERE id=?",
+            (new_status, new_payload, job_id),
+        )
+        if new_payload:
+            self.execute(
+                "UPDATE jobs SET status=?, payload=? WHERE id=?",
+                (new_status, new_payload, job_id),
+            )
         else:
             self.execute("UPDATE jobs SET status=? WHERE id=?", (new_status, job_id))
-    
+
     # Get Job
     def get_job(self, jid):
-        row = self.execute("SELECT id,status,payload,attempts,last_error FROM jobs WHERE id=?", (jid,)).fetchone()
-        if not row: return None
+        row = self.execute(
+            "SELECT id,status,payload,attempts,last_error FROM jobs WHERE id=?", (jid,)
+        ).fetchone()
+        if not row:
+            return None
         return row
 
     # Kill worker that didn't pickup jobs
     def check_workers_alive(self):
-        self.execute("""
+        self.execute(
+            """
             UPDATE jobs
             SET status = 'IN_QUEUE'
             WHERE (strftime('%s','now') - strftime('%s', updated_at)) > ?
@@ -234,38 +278,45 @@ class SQLiteQueue:
                   FROM workers
                   WHERE status = 'REQUESTED'
               );
-        """, (10,))
+        """,
+            (10,),
+        )
 
-        self.execute("""
+        self.execute(
+            """
             UPDATE workers
             SET status = 'DEAD'
             WHERE status = 'REQUESTED'
               AND (strftime('%s','now') - strftime('%s', updated_at)) > ?
-        """, (10,))
-        
-        #TODO: Finish this
+        """,
+            (10,),
+        )
+
+        # TODO: Finish this
         # Make the server endpoints
-        
+
         # Make the gpu client (Simple 10s wait before updating job to done)
         # In gpu client, initlization by getting the images
         # Installing unknown images
         # Make the API for the workers
         # Auto Check if cuda is installed on the device before start
-        
+
         # Make client CLI
         # Test everything
 
     # User Management
-    def create_user(self, username, hashed_password, role='user'):
+    def create_user(self, username, hashed_password, role="user"):
         uid = str(uuid.uuid4())
         try:
             self.execute(
                 "INSERT INTO users(id, username, hashed_password, role) VALUES(?, ?, ?, ?)",
-                (uid, username, hashed_password, role)
+                (uid, username, hashed_password, role),
             )
             return uid
         except sqlite3.IntegrityError:
-            return None # Username already exists
+            return None  # Username already exists
 
     def get_user(self, username):
-        return self.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
+        return self.execute(
+            "SELECT * FROM users WHERE username=?", (username,)
+        ).fetchone()

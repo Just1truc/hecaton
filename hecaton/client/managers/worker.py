@@ -1,14 +1,14 @@
+from __future__ import annotations
 import typer
-import json
-from hecaton.client.managers.server import ServerManager
+
 from hecaton.client.managers.api import HecatonServer
+from hecaton.client.managers.server import ServerManager
 
 worker_app = typer.Typer()
 
+
 @worker_app.command("list")
-def list_workers(
-    ctx: typer.Context
-):
+def list_workers(ctx: typer.Context):
     """
     List all workers and their status.
     """
@@ -16,17 +16,14 @@ def list_workers(
     try:
         server = mgr.connected_server()
         if not server.token and not server.secret:
-             typer.echo("Error: You must be logged in.")
-             return
+            typer.echo("Error: You must be logged in.")
+            return
 
         # token takes precedence, but fallback to secret for legacy (though legacy secret is usually for workers)
         auth_token = server.token if server.token else server.secret
 
-        workers = HecatonServer.list_workers(
-            ip=server.ip,
-            secret=auth_token
-        )
-        
+        workers = HecatonServer.list_workers(ip=server.ip, secret=auth_token)
+
         if isinstance(workers, str):
             typer.echo(f"Error: {workers}")
             return

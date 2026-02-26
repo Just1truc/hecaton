@@ -1,36 +1,34 @@
+from __future__ import annotations
+import json
 import os
 import time
-import json
+from typing import Any, Callable
 
-from typing import Callable, Any
 from pydantic import BaseModel
 
-class ServerLessInput(BaseModel):
-    input : Any
 
-def report_job(
-    new_status : str,
-    output : str = ""
-):
+class ServerLessInput(BaseModel):
+    input: Any
+
+
+def report_job(new_status: str, output: str = ""):
     jobs = [file for file in os.listdir("/shared") if file.startswith("job_")]
     job = jobs[0]
     jid = job[5:-6]
-    open(f"/shared/result_{jid}.json", "w").write(json.dumps({
-        "status" : new_status,
-        "output" : output
-    }))
-    
+    open(f"/shared/result_{jid}.json", "w").write(
+        json.dumps({"status": new_status, "output": output})
+    )
+
+
 # Inside docker
-def start(handler : Callable[[ServerLessInput], dict]):
-    
+def start(handler: Callable[[ServerLessInput], dict]):
     # TODO
-    # Last part: 
-    
+    # Last part:
+
     # Read the shared folder until there is an input job_[job_id].json
     # => if input, read and send in handler
     # => wait for handler to finish then write output inside the result_[job_id].json
     while True:
-        
         jobs = [file for file in os.listdir("/shared") if file.startswith("job_")]
         if len(jobs):
             job = jobs[0]

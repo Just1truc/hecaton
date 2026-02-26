@@ -1,8 +1,8 @@
+from __future__ import annotations
 import argparse
 
 parser = argparse.ArgumentParser(
-    prog="Hecaton Client",
-    description="A simple cli to use the Hecaton Server"
+    prog="Hecaton Client", description="A simple cli to use the Hecaton Server"
 )
 # The login is done in CLI
 # Saved in .cache/hecaton
@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser(
 # The usage of a server is done in the cli
 
 # CLI
-# connect [SERVER]
+# connect [SERVER]
 # new_job, new [filepath] -> job id
 # status_job, status [ID] -> (STATUS, results|None)
 # get_jobs, get -> Return all running jobs (from the server)

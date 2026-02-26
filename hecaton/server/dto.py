@@ -1,44 +1,54 @@
-from typing import Any
+from __future__ import annotations
+from typing import List, Optional
+
 from pydantic import BaseModel
-from typing import Optional, List
+
 
 class NewJobDTO(BaseModel):
-    payload : str
-    image : str
+    payload: str
+    image: str
+
 
 class JobUpdateDTO(BaseModel):
-    job_id : str
-    new_status : str
-    new_payload : Optional[str] = None
+    job_id: str
+    new_status: str
+    new_payload: Optional[str] = None
+
 
 class EnvVariable(BaseModel):
-    key : str
-    value : str
+    key: str
+    value: str
+
 
 class UpdateImageDTO(BaseModel):
-    image_name : str
-    env : Optional[List[EnvVariable]] = None
-    description : Optional[str] = None
+    image_name: str
+    env: Optional[List[EnvVariable]] = None
+    description: Optional[str] = None
+
 
 class NewImageDTO(BaseModel):
-    image_name : str
-    
+    image_name: str
+
+
 class WorkerConnectionDTO(BaseModel):
-    worker_id : Optional[int] = None
-    gpu_name : Optional[str] = None
-    
+    worker_id: Optional[int] = None
+    gpu_name: Optional[str] = None
+
+
 class WorkerStatusUpdateDTO(BaseModel):
-    worker_id : int
-    status : str
-    
+    worker_id: int
+    status: str
+
+
 class AssignedJobDTO(BaseModel):
-    jid : str
-    image_name : str
-    image_env : Optional[dict]
-    status : str
-    payload : str
+    jid: str
+    image_name: str
+    image_env: Optional[dict]
+    status: str
+    payload: str
+
 
 class NewUserDTO(BaseModel):
-    username : str
-    password : str
-    role : str = "user"
+    username: str
+    password: str
+    role: str = "user"
