@@ -22,7 +22,8 @@ dependencies = [
     "python-jose",
     "passlib",
     "fastapi-utilities",
-    "python-multipart"
+    "python-multipart",
+    "filelock"
 ]
 
 [project.optional-dependencies]
