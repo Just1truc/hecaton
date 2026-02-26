@@ -4,6 +4,7 @@ import getpass
 import json
 import os
 from pathlib import Path
+from typing import Optional
 
 from platformdirs import user_data_path
 from pydantic import BaseModel
@@ -19,10 +20,10 @@ def data_dir() -> Path:
 
 
 class WorkerConfig(BaseModel):
-    secret: str | None = None  # Legacy or Token
-    token: str | None = None
-    username: str | None = None
-    password: str | None = None
+    secret: Optional[str] = None  # Legacy or Token
+    token: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
     worker_id: str
 
 
@@ -59,7 +60,7 @@ def save_worker_config(ip: str, worker_config: WorkerConfig):
     open(gpu_data_path, "w").write(json.dumps(register))
 
 
-def get_gpu_name() -> str | None:
+def get_gpu_name() -> Optional[str]:
     import subprocess
 
     try:

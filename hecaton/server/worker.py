@@ -4,6 +4,7 @@ import json
 import sqlite3
 import threading
 import uuid
+from typing import Optional
 
 import requests
 
@@ -188,7 +189,7 @@ class SQLiteQueue:
                 )
                 i += 1
 
-    def get_worker_job(self, worker_id: int) -> AssignedJobDTO | None:
+    def get_worker_job(self, worker_id: int) -> Optional[AssignedJobDTO]:
         row = self.execute(
             "SELECT jobs.id, images.image_name, images.env, jobs.status, jobs.payload FROM jobs INNER JOIN images on jobs.image_id = images.id WHERE assigned_worker=? AND status NOT IN ('FAILED', 'FINISHED')",
             (worker_id,),
@@ -225,7 +226,7 @@ class SQLiteQueue:
         )
 
     # Connect new worker
-    def connect_worker(self, worker_id: int | None, gpu_name: str | None = None):
+    def connect_worker(self, worker_id: Optional[int], gpu_name: Optional[str] = None):
         # connecting existing worker
         if worker_id:
             self.execute(
@@ -244,7 +245,7 @@ class SQLiteQueue:
             return new_id
 
     # Set Job Status
-    def update_job(self, job_id: str, new_status: str, new_payload: str | None):
+    def update_job(self, job_id: str, new_status: str, new_payload: Optional[str]):
         print(job_id, new_status, new_payload)
         print(
             "UPDATE jobs SET status=?, payload=? WHERE id=?",

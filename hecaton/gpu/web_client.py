@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from typing import Optional
 
 import requests
 
@@ -9,7 +10,7 @@ from hecaton.gpu.utils import WorkerConfig, load_worker_config, save_worker_conf
 
 class GPUWebClient:
     def __init__(
-        self, ip: str, worker_config: WorkerConfig, gpu_name: str | None = None
+        self, ip: str, worker_config: WorkerConfig, gpu_name: Optional[str] = None
     ):
         self.ip = ip
         self.worker_id = worker_config.worker_id
@@ -40,7 +41,7 @@ class GPUWebClient:
         except Exception as e:
             print(f"Login error: {e}")
 
-    def __connect_server(self, gpu_name: str | None = None):
+    def __connect_server(self, gpu_name: Optional[str] = None):
         ip = self.ip if self.ip.startswith("http") else f"https://{self.ip}"
         payload = {}
         if len(self.worker_id):

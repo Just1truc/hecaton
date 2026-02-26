@@ -4,7 +4,7 @@ import os
 import shutil
 from datetime import timedelta
 from pathlib import Path
-from typing import Tuple
+from typing import Optional, Tuple
 
 import uvicorn
 from dotenv import load_dotenv
@@ -252,7 +252,7 @@ def update_worker(worker_update_dto: WorkerStatusUpdateDTO):
 # endpoint to get a worker's current job
 @app.get("/worker/{wid}", dependencies=[Depends(get_current_active_user)])
 def get_worker_job(wid: int):
-    job: AssignedJobDTO | None = provider_call(q, "get_worker_job", (wid,))
+    job: Optional[AssignedJobDTO] = provider_call(q, "get_worker_job", (wid,))
     return {"jobs": [job.model_dump()] if job else []}
 
 

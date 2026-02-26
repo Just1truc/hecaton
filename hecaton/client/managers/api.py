@@ -15,7 +15,7 @@ class HecatonServer:
     }
 
     def call_endpoint(
-        ip: str, secret: str, method: str, endpoint: str, payload: dict | None = None
+        ip: str, secret: str, method: str, endpoint: str, payload: Optional[dict] = None
     ):
         ip = ip if ip.startswith("https") else f"https://{ip}"
         # result = HecatonServer.str_to_method[method](f"{ip}{endpoint}",

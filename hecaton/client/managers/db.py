@@ -4,7 +4,7 @@ import json
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from filelock import FileLock
 from platformdirs import user_data_path
@@ -16,16 +16,16 @@ SCHEMA_VERSION = 1
 class ServerInfo(BaseModel):
     ip: str
     name: str
-    secret: str | None = None  # key for legacy auth
-    token: str | None = None  # JWT token
-    username: str | None = None
+    secret: Optional[str] = None  # key for legacy auth
+    token: Optional[str] = None  # JWT token
+    username: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class Database(BaseModel):
     version: int = SCHEMA_VERSION
     servers: List[ServerInfo] = Field(default_factory=list)
-    selected_server: str | None = None
+    selected_server: Optional[str] = None
 
 
 APP_NAME = "hecaton"
